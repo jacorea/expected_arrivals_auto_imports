@@ -58,6 +58,7 @@ def create_directory(directory):
 
 UPLOADED_DIR = os.path.join(root_directory, SFTP_DIR,'expected_arrival_uploads').replace('\\', '/')
 ERRORS_DIR = os.path.join(root_directory, SFTP_DIR, 'expected_arrival_upload_errors').replace('\\', '/')
+BASE_ROOT = os.path.join(root_directory, SFTP_DIR)
 
 # Create "errors" and "uploaded" directories if they don't exist
 create_directory(ERRORS_DIR)
@@ -90,7 +91,7 @@ def monitor_directory():
 def upload_csv_file(filename, bearer_token):
     # if filename.endswith('.csv') and filename not in unuploaded_files:
     if filename.endswith('.csv') and filename not in uploaded_files:
-        file_path = os.path.join(SFTP_DIR, filename)
+        file_path = os.path.join(root_directory, SFTP_DIR, filename)
         print(file_path)
         with sftp.file(file_path, 'r') as file:  # Open file in text mode ('r' for read mode)
             try:
@@ -121,36 +122,33 @@ def upload_csv_file(filename, bearer_token):
                         delete_file(file_path)  # Delete file from root directory
                     else:
                         print("Failed to upload CSV file. Status code:", response.status_code)
-                        print("Error message:", response.text)  # Print the error message if any
-                        print('errors dir: ', ERRORS_DIR)
-                        # move_to_errors_dir(ERRORS_DIR,filename)
+                        move_to_errors_dir(ERRORS_DIR,filename)
                         delete_file(file_path)  # Delete file from root directory
             except Exception as e:
                 print("An error occurred while processing the file: ", str(e))
                 print('errors dir: ', ERRORS_DIR)
-                # move_to_errors_dir(ERRORS_DIR, filename)
+                move_to_errors_dir(ERRORS_DIR, filename)
                 delete_file(file_path)  # Delete file from root directory
     else:
         print("Skipping already uploaded or non-CSV file:", filename)
 
 # Function to move file to uploaded directory
 def move_to_uploaded_dir(file_path, filename):
-    # uploaded_dir_path = os.path.join(UPLOADED_DIR, filename)
-    # sftp.put(file_path, uploaded_dir_path)
-    sftp.remove(file_path)  # Remove the file from the root directory
+    uploads_dir_path = os.path.join(root_directory,file_path, filename)
+    sftp.rename(os.path.join(BASE_ROOT, filename), uploads_dir_path)
+    print('finished moving to uploads directory')
     print("Moved file to 'uploaded' directory:", filename)
 
 # Function to move file to errors directory
 def move_to_errors_dir(file_path, filename):
-    # print(file_path)
-    # errors_dir_path = os.path.join(root_directory,file_path, filename)
-    # sftp.put(file_path, errors_dir_path)
-    sftp.remove(file_path)  # Remove the file from the root directory
+    errors_dir_path = os.path.join(root_directory,file_path, filename)
+    sftp.rename(os.path.join(BASE_ROOT, filename), errors_dir_path)
+    print('finished moving to errors directory')
     print("Moved file to 'errors' directory:", filename)
 
 # Function to delete file from root directory
 def delete_file(file_path):
-    sftp.remove(file_path)
+    print("Before Deleting file from root directory:", file_path)
     print("Deleted file from root directory:", file_path)
 
 # Main function

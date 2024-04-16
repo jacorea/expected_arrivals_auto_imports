@@ -82,7 +82,6 @@ def authenticate_user():
     
 # Function to monitor directory for new files
 def monitor_directory():
-    print('got to file directory')
     files = sftp.listdir(SFTP_DIR)
     print('got the files')
     return files
